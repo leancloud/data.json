@@ -10,19 +10,28 @@ Follows the specification on http://json.org/
 Releases and Dependency Information
 ----------------------------------------
 
-Latest stable release is [0.2.1](https://github.com/clojure/data.json/tree/data.json-0.2.1)
+Latest stable release is [0.2.4]
 
-[Leiningen](https://github.com/technomancy/leiningen) dependency information:
+[Leiningen] dependency information:
 
-    [org.clojure/data.json "0.2.1"]
+    [org.clojure/data.json "0.2.4"]
 
-[Maven](http://maven.apache.org/) dependency information:
+[Maven] dependency information:
 
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>data.json</artifactId>
-      <version>0.2.1</version>
+      <version>0.2.4</version>
     </dependency>
+
+[Gradle] dependency information:
+
+    compile "org.clojure:data.json:0.2.4"
+
+[Leiningen]: http://leiningen.org/
+[Maven]: http://maven.apache.org/
+[Gradle]: http://www.gradle.org/
+
 
 Other versions:
 
@@ -108,6 +117,8 @@ Developer Information
 
 * [GitHub project](https://github.com/clojure/data.json)
 
+* [How to contribute](http://dev.clojure.org/display/community/Contributing)
+
 * [Bug Tracker](http://dev.clojure.org/jira/browse/DJSON)
 
 * [Continuous Integration](http://build.clojure.org/job/data.json/)
@@ -119,11 +130,24 @@ Developer Information
 Change Log
 ----------------------------------------
 
-* Release 0.2.1 on 2012-Oct-26
+* Development version 0.2.5-SNAPSHOT (current Git `master`)
+* Release [0.2.4] on 2014-Jan-10
+  * Small change in behavior: `clojure.data.json/pprint` now adds a
+    newline after its output just like `clojure.core/pprint`
+  * Fix [DJSON-13]: flush output after pprint
+  * Fix [DJSON-14]: handle EOF inside character escape
+  * Fix [DJSON-15]: bad syntax in test
+* Release [0.2.3] on 2013-Aug-30
+  * Enhancement [DJSON-9]: option to escape U+2028 and U+2029
+  * Fix [DJSON-11]: printing unnecessary commas with value-fn
+* Release [0.2.2] on 2013-Apr-07
+  * Fix [DJSON-7]: extra commas when removing key/value pairs)
+  * Fix [DJSON-8]: wrong output stream in `write-json`
+* Release [0.2.1] on 2012-Oct-26
   * Restores backwards-compatibility with 0.1.x releases. The older
     0.1.x APIs are marked as deprecated in their documentation. They
     will be removed in a future release.
-* Release 0.2.0 on 2012-Oct-12
+* Release [0.2.0] on 2012-Oct-12
   * **Not recommended for use**: this release introduced breaking API
     changes (renaming core functions) without any path for
     backwards-compatibility. Applications with transitive dependencies
@@ -133,18 +157,36 @@ Change Log
   * Support for reading large integers as BigInt
   * Optional support for reading decimals as BigDecimal
   * Performance improvements
-* Release 0.1.3 on 2012-Mar-09
+* Release [0.1.3] on 2012-Mar-09
   * Fix writing strings containing characters outside the BMP
-* Release 0.1.2 on 2011-Oct-14
+* Release [0.1.2] on 2011-Oct-14
   * Better parsing of hexadecimal character escapes
   * Fix EOF-handling bug
-  * Fix reflection warnings [DJSON-1](http://dev.clojure.org/jira/browse/DJSON-1)
-* Release 0.1.1 on 2011-Jul-01
+  * Fix [DJSON-1]: reflection warnings
+* Release [0.1.1] on 2011-Jul-01
   * Ensure that printing to `*out*` always uses a PrintWriter.
-* Release 0.1.0 on 2011-Mar-18
+* Release [0.1.0] on 2011-Mar-18
   * Initial release.
   * Source-compatible with clojure.contrib.json, except for the name change.
 
+[DJSON-15]: http://dev.clojure.org/jira/browse/DJSON-15
+[DJSON-14]: http://dev.clojure.org/jira/browse/DJSON-14
+[DJSON-13]: http://dev.clojure.org/jira/browse/DJSON-13
+[DJSON-11]: http://dev.clojure.org/jira/browse/DJSON-11
+[DJSON-9]: http://dev.clojure.org/jira/browse/DJSON-9
+[DJSON-8]: http://dev.clojure.org/jira/browse/DJSON-8
+[DJSON-7]: http://dev.clojure.org/jira/browse/DJSON-7
+[DJSON-1]: http://dev.clojure.org/jira/browse/DJSON-1
+
+[0.2.4]: https://github.com/clojure/data.json/tree/data.json-0.2.4
+[0.2.3]: https://github.com/clojure/data.json/tree/data.json-0.2.3
+[0.2.2]: https://github.com/clojure/data.json/tree/data.json-0.2.2
+[0.2.1]: https://github.com/clojure/data.json/tree/data.json-0.2.1
+[0.2.0]: https://github.com/clojure/data.json/tree/data.json-0.2.0
+[0.1.3]: https://github.com/clojure/data.json/tree/data.json-0.1.3
+[0.1.2]: https://github.com/clojure/data.json/tree/data.json-0.1.2
+[0.1.1]: https://github.com/clojure/data.json/tree/data.json-0.1.1
+[0.1.0]: https://github.com/clojure/data.json/tree/data.json-0.1.0
 
 
 Copyright and License

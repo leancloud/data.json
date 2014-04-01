@@ -48,6 +48,8 @@
         [(remove #{(codepoint \") (codepoint \\) (codepoint \/)}
                  (range 32 127))
          result]
+        (= test :js-separators)
+        ['(16r2028 16r2029) result]
         :else
         [(int test) result]))
 
@@ -121,6 +123,8 @@
   ;; Expects to be called with the head of the stream AFTER the
   ;; initial backslash.
   (let [c (.read stream)]
+    (when (neg? c)
+      (throw (EOFException. "JSON error (end-of-file inside escaped char)")))
     (codepoint-case c
       (\" \\ \/) (char c)
       \b \backspace
@@ -266,8 +270,8 @@
         name (transformed by key-fn) and the value (transformed by
         value-fn).Ther return value of pair-fn must be a vector in the form
         of [key value].The return value of pair-fn will replace the key
-        and value in the output.The default pair-fn returns the pair unchanged.
-"
+        and value in the output.The default pair-fn returns the pair unchanged."
+
   [reader & options]
   (let [{:keys [eof-error? eof-value bigdec key-fn value-fn pair-fn]
          :or {bigdec false
@@ -290,6 +294,7 @@
 ;;; JSON WRITER
 
 (def ^{:dynamic true :private true} *escape-unicode*)
+(def ^{:dynamic true :private true} *escape-js-separators*)
 (def ^{:dynamic true :private true} *escape-slash*)
 
 (defprotocol JSONWriter
@@ -314,6 +319,10 @@
           \newline   (.append sb "\\n")
           \return    (.append sb "\\r")
           \tab       (.append sb "\\t")
+          ;; Unicode characters that Javascript forbids raw in strings
+          :js-separators (if *escape-js-separators*
+                           (.append sb (format "\\u%04x" cp))
+                           (.appendCodePoint sb cp))
           ;; Any other character is Unicode
           (if *escape-unicode*
             (.append sb (format "\\u%04x" cp)) ; Hexadecimal-escaped
@@ -321,23 +330,27 @@
     (.append sb \")
     (.print out (str sb))))
 
-(defn- write-object [m ^PrintWriter out] 
+(defn- write-object [m ^PrintWriter out]
   (.print out \{)
-  (loop [x m]
+  (loop [x m, have-printed-kv false]
     (when (seq m)
       (let [[k v] (first x)
             out-key (*key-fn* k)
-            out-value (*value-fn* k v)]
+            out-value (*value-fn* k v)
+            nxt (next x)]
         (when-not (string? out-key)
           (throw (Exception. "JSON object keys must be strings")))
-        (when-not (= *value-fn* out-value)
-          (write-string out-key out)
-          (.print out \:)
-          (-write out-value out)))
-      (let [nxt (next x)]
-        (when (seq nxt)
-          (.print out \,)
-          (recur nxt)))))
+        (if-not (= *value-fn* out-value)
+          (do
+            (when have-printed-kv
+              (.print out \,))
+            (write-string out-key out)
+            (.print out \:)
+            (-write out-value out)
+            (when (seq nxt)
+              (recur nxt true)))
+          (when (seq nxt)
+            (recur nxt have-printed-kv))))))
   (.print out \}))
 
 (defn- write-array [s ^PrintWriter out]
@@ -407,6 +420,13 @@
 
        If true (default) non-ASCII characters are escaped as \\uXXXX
 
+    :escape-js-separators boolean
+
+       If true (default) the Unicode characters U+2028 and U+2029 will
+       be escaped as \\u2028 and \\u2029 even if :escape-unicode is
+       false. (These two characters are valid in pure JSON but are not
+       valid in JavaScript strings.)
+
     :escape-slash boolean
 
        If true (default) the slash / is escaped as \\/
@@ -420,8 +440,8 @@
 
     :value-fn function
 
-        Function to transform values before writing. For each
-        key-value pair in the input, called with two arguments: the
+        Function to transform values in maps before writing. For each
+        key-value pair in an input map, called with two arguments: the
         key (BEFORE transformation by key-fn) and the value. The
         return value of value-fn will replace the value in the output.
         If the return value is a number, boolean, string, or nil it
@@ -430,14 +450,16 @@
         the return value is a map, it will be processed recursively,
         calling value-fn again on its key-value pairs. If value-fn
         returns itself, the key-value pair will be omitted from the
-        output."
+        output. This option does not apply to non-map collections."
   [x ^Writer writer & options]
-  (let [{:keys [escape-unicode escape-slash key-fn value-fn]
+  (let [{:keys [escape-unicode escape-js-separators escape-slash key-fn value-fn]
          :or {escape-unicode true
+              escape-js-separators true
               escape-slash true
               key-fn default-write-key-fn
               value-fn default-value-fn}} options]
     (binding [*escape-unicode* escape-unicode
+              *escape-js-separators* escape-js-separators
               *escape-slash* escape-slash
               *key-fn* key-fn
               *value-fn* value-fn]
@@ -455,11 +477,11 @@
 
 ;; Based on code by Tom Faulhaber
 
-(defn- pprint-array [s] 
+(defn- pprint-array [s]
   ((pprint/formatter-out "~<[~;~@{~w~^, ~:_~}~;]~:>") s))
 
 (defn- pprint-object [m]
-  ((pprint/formatter-out "~<{~;~@{~<~w:~_~w~:>~^, ~_~}~;}~:>") 
+  ((pprint/formatter-out "~<{~;~@{~<~w:~_~w~:>~^, ~_~}~;}~:>")
    (for [[k v] m] [(*key-fn* k) v])))
 
 (defn- pprint-generic [x]
@@ -486,7 +508,8 @@
     (binding [*escape-unicode* escape-unicode
               *escape-slash* escape-slash
               *key-fn* key-fn]
-      (pprint/write x :dispatch pprint-dispatch))))
+      (pprint/with-pprint-dispatch pprint-dispatch
+        (pprint/pprint x)))))
 
 (load "json_compat_0_1")
 

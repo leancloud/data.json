@@ -119,7 +119,13 @@
                     :value-fn (fn thisfn [k v]
                                 (if (= :date k)
                                   thisfn
-                                  v))))))
+                                  v)))))
+  (is (= "{\"c\":1,\"e\":2}"
+         (json/write-str (sorted-map :a nil, :b nil, :c 1, :d nil, :e 2, :f nil)
+                         :value-fn (fn remove-nils [k v]
+                                     (if (nil? v)
+                                       remove-nils
+                                       v))))))
 
 (declare pass1-string)
 
@@ -202,6 +208,10 @@
 (deftest print-nonescaped-unicode
   (is (= "\"\u1234\u4567\"" (json/write-str "\u1234\u4567" :escape-unicode false))))
 
+(deftest escape-special-separators
+  (is (= "\"\\u2028\\u2029\"" (json/write-str "\u2028\u2029" :escape-unicode false)))
+  (is (= "\"\u2028\u2029\"" (json/write-str "\u2028\u2029" :escape-js-separators false))))
+
 (deftest print-json-null
   (is (= "null" (json/write-str nil))))
 
@@ -254,6 +264,10 @@
   (is (thrown? java.io.EOFException
         (json/read-str "\"missing end quote"))))
 
+(deftest throws-eof-in-escaped-chars
+  (is (thrown? java.io.EOFException
+        (json/read-str "\"\\"))))
+
 (deftest accept-eof
   (is (= ::eof (json/read-str "" :eof-error? false :eof-value ::eof))))
 
@@ -267,7 +281,9 @@
     (is (= x (json/read-str (with-out-str (json/pprint x)))))))
 
 (deftest pretty-print-nonescaped-unicode
-  (is (= "\"\u1234\u4567\"" (with-out-str (json/pprint "\u1234\u4567" :escape-unicode false)))))
+  (is (= "\"\u1234\u4567\"\n"
+         (with-out-str
+           (json/pprint "\u1234\u4567" :escape-unicode false)))))
 
 (defn benchmark []
   (dotimes [_ 8]

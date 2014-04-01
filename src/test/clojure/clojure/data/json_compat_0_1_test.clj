@@ -189,7 +189,7 @@
   (is (= "{\"a\":1,\"b\":2}" (json-str (sorted-map :a 1 :b 2)))))
 
 (deftest object-keys-must-be-strings
-  (is (= "{\"1\":1,\"2\":2") (json-str (sorted-map 1 1 2 2))))
+  (is (= "{\"1\":1,\"2\":2}" (json-str (sorted-map 1 1 2 2)))))
 
 (deftest can-print-empty-objects
   (is (= "{}" (json-str {}))))
@@ -217,9 +217,6 @@
 (deftest pretty-printing
   (let [x (read-json pass1-string false)]
     (is (= x (read-json (with-out-str (pprint-json x)) false)))))
-
-(deftest can-pretty-print-nonescaped-unicode
-  (is (= "\"\u1234\u4567\"" (with-out-str (pprint-json "\u1234\u4567" :escape-unicode false)))))
 
 (defn benchmark []
   (dotimes [_ 8]
